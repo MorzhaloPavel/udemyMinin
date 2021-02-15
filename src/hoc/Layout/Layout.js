@@ -34,7 +34,7 @@ class Layout extends Component {
           isOpen={this.state.menu}
         />
         <main>
-          <Quiz onToggle={this.toggleMenuHandler} />
+          {this.props.children}
         </main>
       </div>
     );
