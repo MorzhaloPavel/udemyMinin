@@ -2,19 +2,13 @@ import React, {Component} from 'react';
 import './Quiz.css'
 import ActiveQuiz from '../../components/ActiveQuiz/ActiveQuiz'
 import FinishdQuiz from '../../components/FinishdQuiz/FinishdQuiz'
-import axios from '../../axios/axios-quiz'
-import Loader from '../../components/UI/Loader/Loader';
+import Loader from '../../components/UI/Loader/Loader'
+import {connect} from 'react-redux'
+import fetchQuizById from '../../store/actions/quiz'
 
 
 class Quiz extends Component {
-  state = {
-    results: {},
-    isFinished: false,
-    activeQuidtion: 0,
-    answerState: null,
-    quiz: [],
-    loading: true
-  }
+  
 
   onAnswerClickHandler = answerId => {
     if (this.state.answerState) {
@@ -24,7 +18,7 @@ class Quiz extends Component {
       }
     }
 
-    const question = this.state.quiz[this.state.activeQuidtion]
+    const question = this.state.quiz[this.state.activeQuistion]
     const results = this.state.results
 
     if (question.rightAnswerId === answerId) {
@@ -44,7 +38,7 @@ class Quiz extends Component {
           })
         } else {
           this.setState({
-           activeQuidtion: this.state.activeQuidtion + 1,
+           activeQuistion: this.state.activeQuistion + 1,
            answerState: null
           })
         }
@@ -60,56 +54,48 @@ class Quiz extends Component {
   }
 
   isQuizFinished() {
-    return this.state.activeQuidtion + 1 === this.state.quiz.length
+    return this.props.activeQuistion + 1 === this.props.quiz.length
   }
 
   retryHandler = () => {
     this.setState({
-      activeQuidtion: 0,
+      activeQuistion: 0,
       answerState: null,
       isFinished: false,
       results: {}
     })
   }
 
-  async componentDidMount() {
-    try {
-      const response = await axios.get(`/quizes/${this.props.match.params.id}.json`)
-      const quiz = response.data
-
-      this.setState({
-        quiz,
-        loading: false
-      })
-    } catch(e) {
-      console.log()
-    }
+  componentDidMount() {
+    console.log(this.props.match.params.id)
+    this.props.fetchQuizById(this.props.match.params.id)
     
   }
 
   render() {
+    
     return (
       <div className={'Quiz'}>
         <div className={'QuizWrapper'}>
           <h1>Ответьте на все вопросы</h1>
 
           {
-            this.state.loading
+            this.props.loading && this.props.quiz
             ? <Loader />
-            : this.state.isFinished 
+            : this.props.isFinished 
               ? <FinishdQuiz
-                  results={this.state.results}
-                  quiz={this.state.quiz}
+                  results={this.props.results}
+                  quiz={this.props.quiz}
                   onRetry={this.retryHandler}
                   onToggle={this.props.onToggle}
               />
               : <ActiveQuiz
-                answers={this.state.quiz[this.state.activeQuidtion].answers}
-                question={this.state.quiz[this.state.activeQuidtion].question}
+                answers={this.props.quiz[this.props.activeQuistion].answers}
+                question={this.props.quiz[this.props.activeQuistion].question}
                 onAnswerClick={this.onAnswerClickHandler}
-                quizLengt={this.state.quiz.length}
-                answerNamber={this.state.activeQuidtion + 1}
-                state={this.state.answerState}
+                quizLengt={this.props.quiz.length}
+                answerNamber={this.props.activeQuistion + 1}
+                state={this.props.answerState}
               />
           }
 
@@ -119,5 +105,23 @@ class Quiz extends Component {
   }
 }
 
+function mapStateToProps(state) {
+  return {
+    results: state.quiz.results,
+    isFinished: state.quiz.isFinished,
+    activeQuistion: state.quiz.activeQuistion,
+    answerState: state.quiz.answerState,
+    quiz: state.quiz.quiz,
+    loading: state.quiz.loading
+  }
+}
 
-export default Quiz;
+function mapDispatchToProps(dispatch) {
+  return {
+    fetchQuizById: id => dispatch(fetchQuizById(id)),
+    
+  }
+}
+
+
+export default connect(mapStateToProps, mapDispatchToProps)(Quiz)
